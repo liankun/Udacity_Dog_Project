@@ -5,3 +5,4 @@ dogImages
 lfw
 .ipynb_checkpoints
 Install instruction.txt
+__pycache__
