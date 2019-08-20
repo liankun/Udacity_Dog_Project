@@ -1,4 +1,7 @@
 import argparse
+import numpy as np
+from glob import glob
+from Utility import load_dataset
 
 parser = argparse.ArgumentParser()
 
@@ -13,7 +16,7 @@ parser.add_argument('--training',
               action='store_true',
               default=False,
               help='retrain the model,need train,test images files or bottleneck features path')
-parser.add_argument('--train_file_path',
+parser.add_argument('--files_path',
               action='store',
               default='../dogImages',
               help='files path to train the model')
@@ -59,7 +62,7 @@ if result.verbose:
     print("image path:           {!r}".format(result.input))
     print("checkpoint:           {!r}".format(result.checkpoint))
     print("training :            {!r}".format(result.training))
-    print("train file path :       {!r}".format(result.train_file_path))
+    print("train file path :       {!r}".format(result.files_path))
     print("bottleneck features path:  {!r}".format(result.bottleneck_feature_path))
     print("face detector:         {!r}".format(result.face_detector))
     print("arch:               {!r}".format(result.arch))
@@ -69,3 +72,17 @@ if result.verbose:
     print("free first n layers:     {!r}".format(result.free_first_layers))
     print("free last n layers:      {!r}".format(result.free_last_layers))
     
+
+train_files, train_targets = load_dataset(result.files_path+'/train')
+valid_files, valid_targets = load_dataset(result.files_path+'/valid')
+test_files, test_targets = load_dataset(result.files_path+'/test')
+    
+    # load list of dog names
+dog_names = [item[20:-1] for item in sorted(glob(result.files_path+"/train/*/"))]
+    # print statistics about the dataset
+print('There are %d total dog categories.' % len(dog_names))
+print('There are %s total dog images.\n' % len(np.hstack([train_files, valid_files, test_files])))
+print('There are %d training dog images.' % len(train_files))
+print('There are %d validation dog images.' % len(valid_files))
+print('There are %d test dog images.'% len(test_files))
+
