@@ -79,15 +79,11 @@ parser.add_argument('--free_last_layers',
               help='free parameters of the last n layers for training,\
                   use_bottleneck_feautre need to be set to False',
               type=int)
-parser.add_argument('--epoch',
+parser.add_argument('--epochs',
               action='store',
               default=10,
               help="number of epoch for training",
               type=int)
-parser.add_argument('--continue',
-              action='store_true',
-              default=False,
-              help='continue training the model from last best model checkpoint')
 parser.add_argument('--best_model',
               action='store',
               default=config_info['best_model'],
@@ -97,9 +93,20 @@ parser.add_argument('--best_model',
                    free first n layers:0\
                    free last n layers:0\
                    Full network or bottleneck: Bottleneck')
+parser.add_argument('--create_pickle_files',
+              action='store_true',
+              default=False,
+              help="create pickle files for training,valid,test images pathes and dog names.This should be done when files path changed"
+              )
+
 parser.add_argument('--verbose',action='store_true',default=False)
 
 result = parser.parse_args()
+
+if result.arch not in ['VGG19','ResNet50','Inception','Xception']:
+    print("Bad architecture and will set to Xception")
+    result.arch = 'Xception'
+
 if result.verbose:
     print("image path:           {!r}".format(result.input))
     print("show image:           {!r}".format(result.show_image))
@@ -114,7 +121,9 @@ if result.verbose:
     print("hidden layer nodes:      {!r}".format(result.hidden_layer_nodes))
     print("free first n layers:     {!r}".format(result.free_first_layers))
     print("free last n layers:      {!r}".format(result.free_last_layers))
+    print("number of epochs:       {!r}".format(result.epochs))
     print("best model name:        {!r}".format(result.best_model))
+    print("create pickle files:     {!r}".format(result.create_pickle_files))
     
 
 config_info['input'] = result.input
@@ -131,26 +140,53 @@ config_info['free_last_layers'] = result.free_last_layers
 config_info['best_model'] = result.best_model
 
 
-# write the new config files to disk
-dict_json = json.dumps(config_info)
-with open("config.json","w") as f:
-    f.write(dict_json)
+
+if result.create_pickle_files:    
+    train_files, train_targets = load_dataset(result.files_path+'/train')
+    valid_files, valid_targets = load_dataset(result.files_path+'/valid')
+    test_files, test_targets = load_dataset(result.files_path+'/test')
     
-#train_files, train_targets = load_dataset(result.files_path+'/train')
-#valid_files, valid_targets = load_dataset(result.files_path+'/valid')
-#test_files, test_targets = load_dataset(result.files_path+'/test')
-
-
+    # list of dog names
+    dog_names = [item[20:-1] for item in sorted(glob(result.files_path+"/train/*/"))]
+    
+    # print statistics about the dataset
+    print('\n')
+    print('There are %d total dog categories.' % len(dog_names))
+    print('There are %s total dog images.\n' % len(np.hstack([train_files, valid_files, test_files])))
+    print('There are %d training dog images.' % len(train_files))
+    print('There are %d validation dog images.' % len(valid_files))
+    print('There are %d test dog images.'% len(test_files))
+    
+    #save to pickle files
+    with open("dog_names.pk",'wb') as fp:
+        pickle.dump(dog_names,fp)
+    
+    #train files
+    with open("train_files.pk",'wb') as fp:
+        pickle.dump(train_files,fp)
+    with open("train_targets.pk",'wb') as fp:
+        pickle.dump(train_targets,fp)
+    
+    #valid files
+    with open("valid_files.pk",'wb') as fp:
+        pickle.dump(valid_files,fp)
+    with open("valid_targets.pk",'wb') as fp:
+        pickle.dump(valid_targets,fp)
+    
+    #test files
+    with open("test_files.pk",'wb') as fp:
+        pickle.dump(test_files,fp)
+    with open("test_targets.pk",'wb') as fp:
+        pickle.dump(test_targets,fp)
+    
+    
+    #train_tensors = paths_to_tensor(train_files).astype('float32')/255
+    #valid_tensors = paths_to_tensor(valid_files).astype('float32')/255
+    #test_tensors = paths_to_tensor(test_files).astype('float32')/255
     
 # load list of dog names
 #dog_names = [item[20:-1] for item in sorted(glob(result.files_path+"/train/*/"))]
-# print statistics about the dataset
-#print('\n')
-#print('There are %d total dog categories.' % len(dog_names))
-#print('There are %s total dog images.\n' % len(np.hstack([train_files, valid_files, test_files])))
-#print('There are %d training dog images.' % len(train_files))
-#print('There are %d validation dog images.' % len(valid_files))
-#print('There are %d test dog images.'% len(test_files))
+
 
 #with open("dog_names.pk",'wb') as fp:
 #    pickle.dump(dog_names,fp)
@@ -176,34 +212,45 @@ with open("config.json","w") as f:
 #print(dog_detector(config_info['input']))
 
 if not result.training:
+    pass
+    #only predict the model
     predict_breed(result.input,
              model_path=result.checkpoint+"/"+result.best_model,
              bottleneck_feature_path=result.bottleneck_feature_path,
-             files_path=result.files_path,
              show_image=result.show_image,
              face_method=result.face_detector)
 
-else:
-    #train_files, train_targets = load_dataset(result.files_path+'/train')
-    #valid_files, valid_targets = load_dataset(result.files_path+'/valid')
-    #test_files, test_targets = load_dataset(result.files_path+'/test')
+else:    
+    # training one model
+    new_model_name='weights.best.{}.{}.{}.{}.Bottleneck.hdf5'.format(result.arch,
+                                               result.hidden_layer_nodes,
+                                               result.free_first_layers,
+                                               result.free_last_layers)
+    if not result.use_bottleneck_feature:
+        #for this case will use full network
+        new_model_name='weights.best.{}.{}.{}.{}.FullNetWork.hdf5'.format(result.arch,
+                                               result.hidden_layer_nodes,
+                                               result.free_first_layers,
+                                               result.free_last_layers)
+    print(new_model_name)
+    train_model(btnk_path=result.bottleneck_feature_path,
+            new_model_path=result.checkpoint+"/"+new_model_name,
+            epochs=result.epochs,
+            hidden_nodes=result.hidden_layer_nodes,
+            arch = result.arch,
+            use_btnk = result.use_bottleneck_feature,
+            free_first_nlayers=result.free_first_layers,
+            free_last_nlayers=result.free_last_layers,
+            augmentation = result.augmentation
+            )
+    config_info['best_model']=new_model_name
 
-    model = create_model(hidden_nodes=result.hidden_layer_nodes,
-                  arch = result.arch,
-                  use_btnk = result.use_bottleneck_feature,
-                  free_first_nlayers=result.free_first_layers,
-                  free_last_nlayers=result.free_last_layers
-                   )
-    if result.use_bottleneck_feature:
-        btnk_train,btnk_valid,btnk_test=get_bottleneck_features(result.bottleneck_feature_path,arch=arch)
-        model.compile(loss="categorical_crossentropy",optimizer="adam",metrics=['accuracy'])
-        
-        checkpointer = ModelCheckpoint(filepath='saved_models/weights.best.Xception.hdf5', 
-                               verbose=1, save_best_only=True)
-        Xception_model.fit(train_Xception, train_targets, 
-          validation_data=(valid_Xception, valid_targets),
-          epochs=20, batch_size=20, callbacks=[checkpointer], verbose=2)
 
+
+# write the new config files to disk
+dict_json = json.dumps(config_info)
+with open("config.json","w") as f:
+    f.write(dict_json)    
         
     
     
