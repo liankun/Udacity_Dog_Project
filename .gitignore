@@ -7,4 +7,5 @@ lfw
 Install instruction.txt
 __pycache__
 *.cfg
-saved_models/weights.best.Xception_aug.hdf5
+saved_models/weights.best.Xception_aug.hdf5 
+saved_models/*.FullNetwork.*

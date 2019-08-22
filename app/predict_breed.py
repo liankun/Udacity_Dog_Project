@@ -180,40 +180,9 @@ if result.create_pickle_files:
         pickle.dump(test_targets,fp)
     
     
-    #train_tensors = paths_to_tensor(train_files).astype('float32')/255
-    #valid_tensors = paths_to_tensor(valid_files).astype('float32')/255
-    #test_tensors = paths_to_tensor(test_files).astype('float32')/255
-    
-# load list of dog names
-#dog_names = [item[20:-1] for item in sorted(glob(result.files_path+"/train/*/"))]
 
-
-#with open("dog_names.pk",'wb') as fp:
-#    pickle.dump(dog_names,fp)
-
-#with open("dog_names.pk","rb") as fp:
-#    dog_names = pickle.load(fp)
-#print(dog_names)
-    
-#get bottleneck feature for wanted arch
-#first is train, second is valid, last is test
-#arch = config_info['arch']
-#btnk_ftr = [{},{},{}]
-#btnk_ftr[0][arch],btnk_ftr[1][arch],btnk_ftr[2][arch] = get_bottleneck_features(config_info['bottleneck_feature_path'],arch=arch)
-
-
-#make prediction
-#load_model(config_info['checkpoint']+"/"+config_info['best_model'])
-
-#get_bottleneck_features(config_info['bottleneck_feature_path'],arch=config_info['arch'])
-
-#print(face_detector(config_info['input'],config_info['face_detector']))
-
-#print(dog_detector(config_info['input']))
 
 if not result.training:
-    pass
-    #only predict the model
     predict_breed(result.input,
              model_path=result.checkpoint+"/"+result.best_model,
              bottleneck_feature_path=result.bottleneck_feature_path,

@@ -11,6 +11,7 @@ from keras.applications.resnet50 import ResNet50
 from keras.preprocessing import image
 from keras import applications
 from keras.preprocessing.image import ImageDataGenerator
+from keras.models import Model
 from tqdm import tqdm
 
 from keras.callbacks import ModelCheckpoint
@@ -65,9 +66,9 @@ def get_bottleneck_features(path,arch='Xception'):
     valid = bottleneck_features['valid']
     test = bottleneck_features['test']
     
-    print("bottleneck train shape: ",train.shape)
-    print("bottleneck valid shape: ",valid.shape)
-    print("bottleneck test shape:  ",test.shape)
+    #print("bottleneck train shape: ",train.shape)
+    #print("bottleneck valid shape: ",valid.shape)
+    #print("bottleneck test shape:  ",test.shape)
     return train,valid,test
 
 def create_model(hidden_nodes=128,
@@ -182,9 +183,6 @@ def face_detector(img_path,method='cv2'):
     img = cv2.imread(img_path)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
-    #cv2.imshow('image',img)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
     
     if method !='cv2':
         tmp_location = face_recognition.face_locations(gray,number_of_times_to_upsample=0,model=method)
@@ -224,7 +222,6 @@ def paths_to_tensor(img_paths):
     return np.vstack(list_of_tensors)
 
 
-
 def dog_detector(img_path):
     """
     input
@@ -234,10 +231,6 @@ def dog_detector(img_path):
     False: dog not detected
     """
     print("running dog_detector")
-    #img = cv2.imread(img_path)
-    #cv2.imshow('image',img)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
     
     # define ResNet50 model for dog detector
     ResNet50_model = ResNet50(weights='imagenet')
@@ -275,10 +268,13 @@ def predict_breed(img_path,model_path,bottleneck_feature_path,show_image=False,f
     
     model,arch,use_bottleneck = load_model(model_path)
     
+    #create a model for the new bottleneck feature
+    model_new_btnk = Model(inputs=model.input,outputs=model.layers[-3].output)
+    
     #choose the right architecture
     best_one = None
+    new_bottleneck_feature = None
     if use_bottleneck:
-        bottleneck_feature = None
         if arch == 'Xception':
             bottleneck_feature = extract_Xception(path_to_tensor(img_path))
         if arch == 'VGG19':
@@ -292,12 +288,12 @@ def predict_breed(img_path,model_path,bottleneck_feature_path,show_image=False,f
 
         predicted_vector = model.predict(bottleneck_feature)
         best_one = np.argmax(predicted_vector)
+        new_bottleneck_feature = model_new_btnk.predict(bottleneck_feature)
     else:
         predicted_vector = model.predict(path_to_tensor(img_path).astype('float32')/255)
         best_one = np.argmax(predicted_vector)
-        
-    #print("shape of bottleneck feature for iuput image")
-    #print(bottleneck_feature.shape)
+        new_bottleneck_feature = model_new_btnk.predict(path_to_tensor(img_path).astype('float32')/255)
+    
     # load list of dog names
     with open("dog_names.pk","rb") as fp:
         dog_names = pickle.load(fp)
@@ -308,7 +304,6 @@ def predict_breed(img_path,model_path,bottleneck_feature_path,show_image=False,f
         return dog_names[best_one]
     
     #load the train files
-    #train_files, train_targets = load_dataset(files_path+'/train')
     with open("train_files.pk","rb") as fp:
         train_files = pickle.load(fp)
     
@@ -320,12 +315,17 @@ def predict_breed(img_path,model_path,bottleneck_feature_path,show_image=False,f
     btnk_train,btnk_valid,btnk_test=get_bottleneck_features(bottleneck_feature_path,arch=arch)
     best_i = 0
     best_similar = -9999
-    vect0 = bottleneck_feature.flatten()
+    vect0 = new_bottleneck_feature.flatten()
     for i in range(btnk_train.shape[0]):
         #only consider the same group
         if np.argmax(train_targets[i])!=best_one:
             continue       
-        vect1 = btnk_train[i].flatten()
+        vect1 = None
+        if use_bottleneck:
+            vect1 = model_new_btnk.predict(np.expand_dims(btnk_train[i], axis=0)).flatten()
+        else:
+            vect1 = model_new_btnk.predict(path_to_tensor(train_files[i]).astype('float32')/255)
+            
         cosAngle = np.sum(vect0*vect1)/np.linalg.norm(vect0)/np.linalg.norm(vect1)
         
         if cosAngle>=best_similar:
@@ -386,8 +386,6 @@ def train_model(btnk_path,
     with open("test_targets.pk","rb") as fp:
         test_targets = pickle.load(fp)
     
-    #print("test_files shape ",test_files.shape)
-    #print("test_targets shape ",test_targets.shape)
     
     #create model
     model = create_model(hidden_nodes=hidden_nodes,
@@ -467,8 +465,6 @@ def train_model(btnk_path,
         model.load_weights(new_model_path)
         # get index of predicted dog breed for each image in test set
         print('\n')
-        #print("test_tensor shape ",test_tensors.shape)
-        #print("test target shape ",test_targets.shape)
         predictions = [np.argmax(model.predict(np.expand_dims(tensor, axis=0))) for tensor in test_tensors]
         # report test accuracy
         test_accuracy = 100*np.sum(np.array(predictions)==np.argmax(test_targets, axis=1))/len(predictions)
