@@ -193,8 +193,8 @@ else:
     # training one model
     new_model_name='weights.best.{}.{}.{}.{}.Bottleneck.hdf5'.format(result.arch,
                                                result.hidden_layer_nodes,
-                                               result.free_first_layers,
-                                               result.free_last_layers)
+                                               0,
+                                               0)
     if not result.use_bottleneck_feature:
         #for this case will use full network
         new_model_name='weights.best.{}.{}.{}.{}.FullNetWork.hdf5'.format(result.arch,
