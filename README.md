@@ -39,7 +39,10 @@ Place it in the repo, at location `path/to/Udacity_Dog_Project/bottleneck_featur
 * papers/: some papers related to the face detection
 * images/: example used in this project
 * test_images/: test image examples
+* haarcascades/haarcascade_frontalface_alt.xml: parameters used in the cv2 face detector
+* extract_bottleneck_features.py: help function used in notebook
 * app/: the application of this project
+   - haarcascades/haarcascade_frontalface_alt.xml: parameters used in the cv2 face detector
    - Utility.py: help function for the application
    - extract_bottleneck_features.py: help function to extract bottleneck features for an image
    - predict_breed.py : main application for algorithm
@@ -84,9 +87,12 @@ This application integrates prediction, training as well as architecture selecti
    `python predict_breed.py --input='../test_images/test4.jpg' --face_detector='hog' --best_model='weights.best.Xception.128.0.0.Bottleneck.hdf5'`
    - If you have a powerful GPU, you can train with augmentation and free serval layers: <br />
    `python predict_breed.py --verbose --training --hidden_layer_nodes=512 --full_network --arch='Inception' --free_first_layers=2 --free_last_layers=2  --augmentation --epochs=10`
-* Here are two examples, by enabling show image option
+* Here are two examples (by using Xception and number of hidden nodes=256), by enabling show image option
 ![example one][image2]
 ![example two][image3]
+
+### Summary
+As you see, the model seems to work well on the images show above. For the classification on dogs, we can get a accuracy of 83%. The model can get overtrained very easily. One solution is to get more data and besides embeding may be a good choice.  
 
 ### License
 This project is licensed under the terms of the MIT license
