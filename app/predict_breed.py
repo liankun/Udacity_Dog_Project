@@ -45,37 +45,35 @@ parser.add_argument('--bottleneck_feature_path',
               help='bottleneck feature path')
 parser.add_argument('--face_detector',
               action='store',
-              default=config_info['face_detector'],
+              default='cv2',
               help='choose one of the three face detectors: cv2 hog cnn')
 parser.add_argument('--arch',
               action='store',
-              default=config_info['arch'],
+              default='Xception',
               help='choose one of the four network arch: VGG19 ResNet50 Inception Xception')
 parser.add_argument('--augmentation',
-              action='store',
-              default=config_info['augmentation'],
-              help='Use augmentation to train the model, warning: use_bottleneck_feature need to be set to False ',
-              type=ast.literal_eval)
-parser.add_argument('--use_bottleneck_feature',
-              action='store',
-              default=config_info['use_bottleneck_feature'],
-              help='Use bottleneck features,False means the image will go from the beginning of the network.\
-                  set this to False will disable free_first_layers ,free_last_layers and augmentation',
-              type=ast.literal_eval)
+              action='store_true',
+              default=False,
+              help='Use augmentation to train the model, warning: use_bottleneck_feature need to be set to False ')
+parser.add_argument('--full_network',
+              action='store_true',
+              default=False,
+              help='Use bottleneck features,True means the image will go from the beginning of the network.\
+                  set this to False will disable free_first_layers ,free_last_layers and augmentation',)
 parser.add_argument('--hidden_layer_nodes',
               action='store',
-              default=config_info['hidden_layer_nodes'],
+              default=128,
               help='number of nodes for the hidden layers',
               type=int)
 parser.add_argument('--free_first_layers',
               action='store',
-              default=config_info['free_first_layers'],
+              default=0,
               help='free parameters of the first n layers for training,\
                   use_bottleneck_feature need to be set to False',
               type=int)
 parser.add_argument('--free_last_layers',
               action='store',
-              default=config_info['free_last_layers'],
+              default=0,
               help='free parameters of the last n layers for training,\
                   use_bottleneck_feautre need to be set to False',
               type=int)
@@ -117,7 +115,7 @@ if result.verbose:
     print("face detector:         {!r}".format(result.face_detector))
     print("arch:               {!r}".format(result.arch))
     print("augmentation:          {!r}".format(result.augmentation))
-    print("use bottleneck feature:   {!r}".format(result.use_bottleneck_feature))
+    print("full network:          {!r}".format(result.full_network))
     print("hidden layer nodes:      {!r}".format(result.hidden_layer_nodes))
     print("free first n layers:     {!r}".format(result.free_first_layers))
     print("free last n layers:      {!r}".format(result.free_last_layers))
@@ -130,13 +128,6 @@ config_info['input'] = result.input
 config_info['checkpoint'] = result.checkpoint
 config_info['files_path'] = result.files_path
 config_info['bottleneck_feature_path'] = result.bottleneck_feature_path
-config_info['face_detector'] = result.face_detector
-config_info['arch'] = result.arch
-config_info['augmentation'] = result.augmentation
-config_info['use_bottleneck_feature'] = result.use_bottleneck_feature
-config_info['hidden_layer_nodes'] = result.hidden_layer_nodes
-config_info['free_first_layers'] = result.free_first_layers
-config_info['free_last_layers'] = result.free_last_layers
 config_info['best_model'] = result.best_model
 
 
@@ -185,7 +176,7 @@ if result.create_pickle_files:
 if not result.training:
     predict_breed(result.input,
              model_path=result.checkpoint+"/"+result.best_model,
-             bottleneck_feature_path=result.bottleneck_feature_path,
+             bottleneck_feature_path= result.bottleneck_feature_path,
              show_image=result.show_image,
              face_method=result.face_detector)
 
@@ -195,7 +186,7 @@ else:
                                                result.hidden_layer_nodes,
                                                0,
                                                0)
-    if not result.use_bottleneck_feature:
+    if result.full_network:
         #for this case will use full network
         new_model_name='weights.best.{}.{}.{}.{}.FullNetWork.hdf5'.format(result.arch,
                                                result.hidden_layer_nodes,
@@ -207,7 +198,7 @@ else:
             epochs=result.epochs,
             hidden_nodes=result.hidden_layer_nodes,
             arch = result.arch,
-            use_btnk = result.use_bottleneck_feature,
+            use_btnk = (not result.full_network),
             free_first_nlayers=result.free_first_layers,
             free_last_nlayers=result.free_last_layers,
             augmentation = result.augmentation

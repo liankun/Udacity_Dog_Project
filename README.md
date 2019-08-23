@@ -1,7 +1,8 @@
 [//]: # (Image References)
 
 [image1]: ./images/sample_dog_output.png "Sample Output"
-
+[image2]: ./images/example1.png "example one"
+[image3]: ./images/example2.png "example two"
 
 ### Project Overview
 This is my final project for the Udacity Data Science Program.The main goal of this project is writing a algorithm to identify the resembling dog breed.The main procedure will be followed as dog_app.ipynb.The algorithm will be deployed as an application
@@ -58,31 +59,35 @@ This application integrates prediction, training as well as architecture selecti
    - `--face_detector` : There are three types of face detector: cv2, hog and cnn. For hog and cnn you can refer to this [link](https://github.com/ageitgey/face_recognition). The cnn needs large GPU memory, it may crashes if lack of memory
    - `--arch` : choose one of the four achitectures
    - `--augmentation` : use augmentation for training. The augmentation is only used for **Full Network Training**, which means bottleneck features will                  not be used
-   - `--use_bottleneck_feature` : use bottleneck feature to train or not 
+   - `--full_network` : use bottleneck feature or full network to train 
    - `--hidden_layer_nodes` : the number of hidden layer nodes
    - `--free_first_layers` : number of layers be freed for the selected architecture. in order to use this to train, use_bottleneck_feature need to be                       set to False
    - `--free_last_layers` : similar to previous one, but free the last n layers
    - `--epochs` : number of epochs for training
    - `--best_model`: the name of the best model used for prediction. The name rules are `weights.best.{1}.{2}.{3}.{4}.{5}.hdf5`
-          1. architecture
-          2. number of hidden layer nodes
-          3. number of first layers to be freed 
-          4. number of last layers to be freed
-          5. use bottleneck feature or full network
-          after each training, the best_model will set to be the new one
-   - `--create_pickle_files`: create pickle for train, test and valid. when changing the files directory, should use this option
+               1. architecture
+               2. number of hidden layer nodes
+               3. number of first layers to be freed 
+               4. number of last layers to be freed
+               5. use bottleneck feature or full network
+               **after each training, the best_model will set to be the new one**
+   - `--create_pickle_files`: create pickle for train, test and valid. when changing the train files directory, should use this option
    - `--verbose` : print the configuration
 * some examples: 
-   - training use the Xception with hidden layer nodes 512, and use the bottleneck features:
-   `python predict_breed.py --verbose --training --hidden_layer_nodes=512 --use_bottleneck_feature True --arch='Xception'`
-   - predict use the model from previous step, use face detector 'hog'. if you want to show image you can add `--show_image` opion:
+   - training use the Xception with hidden layer nodes 512, and use the bottleneck features:<br />
+   `python predict_breed.py --training --hidden_layer_nodes=256 --arch='Xception'`
+   - predict use the model from previous step, use face detector 'hog'. if you want to show image you can add `--show_image` opion:<br />
    ` python predict_breed.py --input='../test_images/test4.jpg' --face_detector='hog'`
-   - if you want to show image, you can add `--show_image` option.It will take some time.
-   ` python predict_breed.py --input='../test_images/test4.jpg' --face_detector='hog' --show_image` 
-   - predict use another trained model: 
+   - if you want to show image, you can add `--show_image` option.It will take some time.<br />
+   ` python predict_breed.py --input='../test_images/test4.jpg' --face_detector='cnn' --show_image` 
+   - predict use another trained model: <br />
    `python predict_breed.py --input='../test_images/test4.jpg' --face_detector='hog' --best_model='weights.best.Xception.128.0.0.Bottleneck.hdf5'`
-   - If you have a powerful GPU, you can train with augmentation and free serval layers:
-   `python predict_breed.py --verbose --training --hidden_layer_nodes=512 --use_bottleneck_feature False --arch='Inception' --free_first_layers=2 --free_last_layers=2  --augmentation True --epochs=10`
+   - If you have a powerful GPU, you can train with augmentation and free serval layers: <br />
+   `python predict_breed.py --verbose --training --hidden_layer_nodes=512 --full_network --arch='Inception' --free_first_layers=2 --free_last_layers=2  --augmentation --epochs=10`
+* Here are two examples, by enabling show image option
+![example one][image2]
+![example two][image3]
+
 ### License
 This project is licensed under the terms of the MIT license
 

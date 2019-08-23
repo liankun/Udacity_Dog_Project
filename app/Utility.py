@@ -151,11 +151,11 @@ def load_model(path):
     if model_config[6] =="Bottleneck":
         use_bottleneck = True
     
-    print("model arch: ",arch)
-    print("hidden_nodes: ",hidden_nodes)
-    print("first_nlayers: ",first_nlayers)
-    print("last_nlayers: ",last_nlayers)
-    print("use bottleneck: ",use_bottleneck)
+    #print("model arch: ",arch)
+    #print("hidden_nodes: ",hidden_nodes)
+    #print("first_nlayers: ",first_nlayers)
+    #print("last_nlayers: ",last_nlayers)
+    #print("use bottleneck: ",use_bottleneck)
     
     model = create_model(hidden_nodes=hidden_nodes,
                   arch = arch,
@@ -261,10 +261,7 @@ def predict_breed(img_path,model_path,bottleneck_feature_path,show_image=False,f
     if (not contain_dog) and (not contain_human):
         print("No Dog or human detected !")
         return
-    if contain_dog:
-        print("dog detected")
-    if contain_human:
-        print("human detected")
+    
     
     model,arch,use_bottleneck = load_model(model_path)
     
@@ -297,8 +294,12 @@ def predict_breed(img_path,model_path,bottleneck_feature_path,show_image=False,f
     # load list of dog names
     with open("dog_names.pk","rb") as fp:
         dog_names = pickle.load(fp)
-        
-    print("most similar breed: ",dog_names[best_one])
+    
+    if contain_dog:
+        print("Hello dog!")
+    if contain_human:
+        print("Hello Human!")
+    print("most similar breed: \n ",dog_names[best_one])
     
     if not show_image:
         return dog_names[best_one]
@@ -335,8 +336,15 @@ def predict_breed(img_path,model_path,bottleneck_feature_path,show_image=False,f
     #show image
     img0 = cv2.imread(img_path)
     img1 = cv2.imread(train_files[best_i])
-    cv2.imshow('original image',img0)
-    cv2.imshow('most similar image',img1)
+    
+    img_resize0 = cv2.resize(img0,(400,400))
+    img_resize1 = cv2.resize(img1,(400,400))
+    
+    img_concate_Hori=np.concatenate((img_resize0,img_resize1),axis=1)
+    
+    cv2.imshow('image',img_concate_Hori)
+    #cv2.imshow('most similar image',img_resize1)
+    
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     
